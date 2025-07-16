@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ICT Center Ticketing System{% endblock %}</title>
+    <title>{% block title %}ICT Directorate Ticketing System{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-brand">
-                <h2>ICT Center</h2>
-            </div>
-            
+            <div class="nav-logo-brand">
+            <img src="https://run.edu.ng/wp-content/uploads/2022/05/colored-logo.png" alt="ICT Directorate Logo" class="nav-logo-img">
+            <h2 class="nav-brand">ICT Directorate</h2>
+        </div>
+   
+    
             {% if user.is_authenticated %}
             <div class="nav-menu">
                 <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
@@ -25,12 +28,13 @@
                 
                 <div class="nav-user">
                     <span class="user-info">{{ user.get_full_name|default:user.username }}</span>
-                    <span class="user-role">({{ user.userprofile.role|title }})</span>
+                    {% comment %} <span class="user-role">({{ user.userprofile.role|title }})</span> {% endcomment %}
                     <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
                 </div>
             </div>
             {% endif %}
         </div>
+         </div>
     </nav>
 
     <main class="main-content">

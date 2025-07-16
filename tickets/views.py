@@ -1,17 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import permission_required
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-import json
-from .models import UserProfile, Ticket, TicketComment
-from .forms import TicketForm, UserRegistrationForm, TicketCommentForm
+from .models import *
+from .forms import *
 
 def home(request):
     if request.user.is_authenticated:
@@ -22,19 +20,34 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            UserProfile.objects.create(
-                user=user,
-                role=form.cleaned_data['role'],
-                department=form.cleaned_data['department'],
-                phone_number=form.cleaned_data['phone_number']
-            )
-            username = form.cleaned_data.get('username')
-            messages.success(request, f'Account created for {username}! You can now log in.')
-            return redirect('login')
+            try:
+                with transaction.atomic():
+                    user = form.save() 
+                    messages.success(request, f'Account created for {user.username}! You can now log in.')
+                    return redirect('login')
+            except Exception as e:
+                form.add_error(None, f'An unexpected error occurred: {e}')
     else:
         form = UserRegistrationForm()
+    
     return render(request, 'registration/register.html', {'form': form})
+
+def get_student_info(request):
+    id_number = request.GET.get('id_number', '').strip().upper()
+    try:
+        record = StudentRecord.objects.get(id_number=id_number)       
+        role = 'staff' if record.department.strip().upper() == 'DICT' else 'student'      
+        data = {
+            'first_name': record.first_name,
+            'last_name': record.surname,
+            'department': record.department,
+            'role': role, 
+            'found': True
+        }
+    except StudentRecord.DoesNotExist:
+        data = {'found': False}
+
+    return JsonResponse(data)
 
 @login_required
 def dashboard(request):
@@ -56,7 +69,7 @@ def dashboard(request):
             'in_progress_tickets': tickets.filter(status='in_progress').count(),
             'resolved_tickets': tickets.filter(status='resolved').count(),
         }
-    else:  # student
+    else: 
         tickets = Ticket.objects.filter(created_by=request.user)
         stats = {
             'my_tickets': tickets.count(),
@@ -138,6 +151,7 @@ def ticket_list(request):
 def ticket_detail(request, ticket_id):
     ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
     user_profile = request.user.userprofile
+    staff_users = User.objects.filter(userprofile__role='staff').order_by('username')
     
     # Check permissions
     if (user_profile.role == 'student' and ticket.created_by != request.user) or \
@@ -161,6 +175,7 @@ def ticket_detail(request, ticket_id):
         'ticket': ticket,
         'user_profile': user_profile,
         'comment_form': comment_form,
+        'staff_users': staff_users,
     }
     return render(request, 'ticket_detail.html', context)
 
@@ -248,3 +263,27 @@ def admin_panel(request):
         'staff_users': staff_users,
     }
     return render(request, 'admin_panel.html', context)
+
+@login_required
+@permission_required('tickets.delete_ticket', raise_exception=True)
+def delete_ticket(request, ticket_id):
+    ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
+    
+    if request.method == 'POST':
+        ticket.delete()
+        return redirect('home')  # or wherever you want to redirect after deletion
+
+    return render(request, 'confirm_delete.html', {'ticket': ticket})
+
+#error handlers
+def custom_bad_request(request, exception):
+    return render(request, '400.html', status=400)
+
+def custom_permission_denied(request, exception):
+    return render(request, '403.html', status=403)
+
+def custom_page_not_found(request, exception):
+    return render(request, '404.html', status=404)
+
+def custom_server_error(request):
+    return render(request, '500.html', status=500)

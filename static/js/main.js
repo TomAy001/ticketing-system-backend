@@ -50,19 +50,24 @@ function initializeWebSocket() {
 function showNotification(message, type = 'info') {
     const container = document.getElementById('notification-container');
     if (!container) return;
-    
+
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+
     notification.innerHTML = `
-        <div class="notification-content">
-            <strong>${type === 'success' ? 'Success!' : type === 'error' ? 'Error!' : 'Info'}</strong>
-            <p>${message}</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+            <div class="notification-content">
+                <strong style="display:block; margin-bottom: 0.25rem;">
+                    ${type === 'success' ? 'Success!' : type === 'error' ? 'Error!' : type === 'warning' ? 'Warning!' : 'Info'}
+                </strong>
+                <p style="margin: 0;">${message}</p>
+            </div>
+            <button class="notification-close" onclick="this.closest('.notification').remove()">×</button>
         </div>
-        <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
     `;
-    
+
     container.appendChild(notification);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         if (notification.parentElement) {
@@ -70,6 +75,7 @@ function showNotification(message, type = 'info') {
         }
     }, 5000);
 }
+
 
 // Initialize alert close buttons
 function initializeAlerts() {
@@ -129,10 +135,38 @@ function initializeForms() {
                 }
             }
             
-            textarea.addEventListener('input', updateCounter);
+            textarea.addEventListener('input', updateCounter);A
             updateCounter();
         }
     });
+    // This one's gonna Auto-fill dem fields based on ID Number
+    const idInput = document.getElementById("id_id_number");
+    if (idInput) {
+        idInput.addEventListener("blur", function () {
+            const id = this.value.trim().toUpperCase();
+            if (id.length > 5) {
+                fetch(`/get-student-info/?id_number=${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.found) {
+                            const firstNameInput = document.getElementById("id_first_name");
+                            const lastNameInput = document.getElementById("id_last_name");
+                            const departmentInput = document.getElementById("id_department");
+                            
+                            if (firstNameInput) firstNameInput.value = data.first_name;
+                            if (lastNameInput) lastNameInput.value = data.last_name;
+                            if (departmentInput) departmentInput.value = data.department;
+                        } else {
+                            showNotification("ID number not found in university records.", "warning");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Failed to fetch student info:", error);
+                        showNotification("An error occurred while checking ID number.", "error");
+                    });
+            }
+        });
+    }  
 }
 
 // Utility functions for AJAX requests

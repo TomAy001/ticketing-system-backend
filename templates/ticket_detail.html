@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ ticket.ticket_id }} - ICT Center{% endblock %}
+{% block title %}{{ ticket.ticket_id }} - ICT Directorate{% endblock %}
 
 {% block content %}
 <div class="ticket-detail-container">
@@ -106,12 +106,20 @@
                     <select id="staff-select" required>
                         <option value="">Select Staff Member</option>
                         {% for staff in staff_users %}
-                        <option value="{{ staff.id }}">{{ staff.get_full_name|default:staff.username }}</option>
+                            {% with staff.studentrecord as record %}
+                                <option value="{{ staff.id }}">
+                                    {{ staff.get_full_name|default:staff.username }}
+                                    {% if record and record.office %}- {{ record.office }}{% endif %}
+                                </option>
+                            {% endwith %}
                         {% endfor %}
                     </select>
                     <button type="submit" class="btn btn-primary">Assign</button>
                 </form>
             </div>
+            {% endif %}
+            {% if perms.tickets.delete_ticket %}
+                <a href="{% url 'delete_ticket' ticket.ticket_id %}" class="btn btn-danger">Delete Ticket</a>    
             {% endif %}
         </div>
     </div>

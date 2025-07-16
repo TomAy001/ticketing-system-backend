@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Django-specific ignore rules
+db.sqlite3
+*.pyc
+__pycache__/
+.env
+/staticfiles/
+/media/

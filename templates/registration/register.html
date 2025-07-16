@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 
 {% block title %}Register - ICT Center{% endblock %}
 
@@ -6,11 +7,19 @@
 <div class="auth-container">
     <div class="auth-card">
         <h2>Create Account</h2>
-        <p>Join the ICT Center ticketing system</p>
+        <p>Join the ICT Directorate ticketing system</p>
         
         <form method="post" class="auth-form">
             {% csrf_token %}
             
+            <div class="form-group">
+                <label for="{{ form.id_number.id_for_label }}">ID Number</label>
+                {{ form.id_number }}
+                {% if form.id_number.errors %}
+                <div class="form-errors">{{ form.id_number.errors }}</div>
+                {% endif %}
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="{{ form.first_name.id_for_label }}">First Name</label>
@@ -46,14 +55,15 @@
             </div>
             
             <div class="form-row">
-                <div class="form-group">
-                    <label for="{{ form.role.id_for_label }}">Role</label>
-                    {{ form.role }}
+                {% comment %} <div class="form-group">
+                    <label for="id_role_display">Role</label>
+                    <input type="text" id="id_role_display" class="form-control" readonly>
+                    <input type="hidden" id="id_role" name="role" value="">
                     {% if form.role.errors %}
                     <div class="form-errors">{{ form.role.errors }}</div>
                     {% endif %}
-                </div>
-                
+                </div> {% endcomment %}
+
                 <div class="form-group">
                     <label for="{{ form.department.id_for_label }}">Department</label>
                     {{ form.department }}
