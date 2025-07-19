@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ticketing-system
+    name: ict-ticketing-web
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -9,6 +9,13 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: ict_ticketing.settings
       - key: SECRET_KEY
-        value: your-secret-key-here
-      - key: DATABASE_URL
-        value: (Render will auto-generate this if using PostgreSQL)
+        value: your-generated-secret-key
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: redis
+    autoDeploy: true
+
+databases:
+  - name: redis
+    ipAllowList: []
