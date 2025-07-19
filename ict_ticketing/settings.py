@@ -10,8 +10,7 @@ SECRET_KEY = '-x!a(*ux81xc9kb4r3=3=$rpz$efcfr@=8+p6l^o6qw72620#w'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['ictdirectoratesupport.onrender.com']
-
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "your-default-dev-key")
 
 # Application definition
 INSTALLED_APPS = [
@@ -103,10 +102,11 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [os.environ.get('REDIS_URL')],
         },
     },
 }
+
 
 # Email settings (configure for production)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
