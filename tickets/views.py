@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction
 from django.core.paginator import Paginator
-from django.contrib.auth.decorators import permission_required
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import *
@@ -20,16 +19,31 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
+            id_number = form.cleaned_data.get('id_number').strip().upper()
             try:
+                record = StudentRecord.objects.get(id_number=id_number)
+
                 with transaction.atomic():
-                    user = form.save() 
-                    messages.success(request, f'Account created for {user.username}! You can now log in.')
+                    user = form.save()
+
+                    role = 'staff' if record.department.strip().upper() == 'DICT' else 'student'
+
+                    UserProfile.objects.create(
+                        user=user,
+                        role=role
+                    )
+
+                    messages.success(request, 'Account created successfully. You can now log in.')
                     return redirect('login')
+
+            except StudentRecord.DoesNotExist:
+                form.add_error('id_number', 'This ID is not recognized by the university records.')
+
             except Exception as e:
-                form.add_error(None, f'An unexpected error occurred: {e}')
+                form.add_error(None, f'An unexpected error occurred: {str(e)}')
     else:
         form = UserRegistrationForm()
-    
+
     return render(request, 'registration/register.html', {'form': form})
 
 def get_student_info(request):
@@ -184,32 +198,32 @@ def update_ticket_status(request, ticket_id):
     if request.method == 'POST':
         ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
         user_profile = request.user.userprofile
-        
-        # Check permissions
+
         if user_profile.role not in ['admin', 'staff']:
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        
+
         new_status = request.POST.get('status')
-        if new_status in dict(Ticket.STATUS_CHOICES):
-            old_status = ticket.status
-            ticket.status = new_status
-            ticket.save()
-            
-            # Send WebSocket notification
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                'notifications',
-                {
-                    'type': 'ticket_notification',
-                    'message': f'Ticket {ticket.ticket_id} status updated to {new_status}',
-                    'ticket_id': ticket.ticket_id,
-                    'action': 'status_updated',
-                    'new_status': new_status
-                }
-            )
-            
-            return JsonResponse({'success': True, 'new_status': new_status})
-        
+        valid_statuses = [choice[0] for choice in Ticket.STATUS_CHOICES]
+        if not new_status or new_status not in valid_statuses:
+            return JsonResponse({'error': 'Invalid status value'}, status=400)
+
+        ticket.status = new_status
+        ticket.save()
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'notifications',
+            {
+                'type': 'ticket_notification',
+                'message': f'Ticket {ticket.ticket_id} status updated to {new_status}',
+                'ticket_id': ticket.ticket_id,
+                'action': 'status_updated',
+                'new_status': new_status
+            }
+        )
+
+        return JsonResponse({'success': True, 'new_status': new_status})
+
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @login_required
@@ -276,13 +290,13 @@ def delete_ticket(request, ticket_id):
     return render(request, 'confirm_delete.html', {'ticket': ticket})
 
 #error handlers
-def custom_bad_request(request, exception):
+def custom_bad_request(request, exception=None):
     return render(request, '400.html', status=400)
 
-def custom_permission_denied(request, exception):
+def custom_permission_denied(request, exception=None):
     return render(request, '403.html', status=403)
 
-def custom_page_not_found(request, exception):
+def custom_page_not_found(request, exception=None):
     return render(request, '404.html', status=404)
 
 def custom_server_error(request):
