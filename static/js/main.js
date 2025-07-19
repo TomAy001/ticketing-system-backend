@@ -289,17 +289,17 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Progressive Web App support
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/static/js/sw.js')
-            .then(function(registration) {
-                console.log('ServiceWorker registration successful');
-            })
-            .catch(function(error) {
-                console.log('ServiceWorker registration failed');
-            });
-    });
-}
+// if ('serviceWorker' in navigator) {
+//     window.addEventListener('load', function() {
+//         navigator.serviceWorker.register('/static/js/sw.js')
+//             .then(function(registration) {
+//                 console.log('ServiceWorker registration successful');
+//             })
+//             .catch(function(error) {
+//                 console.log('ServiceWorker registration failed');
+//             });
+//     });
+// }
 
 // Performance monitoring
 function measurePageLoad() {
