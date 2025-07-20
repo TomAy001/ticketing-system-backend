@@ -12,6 +12,10 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['ticketing-system-backend-d96m.onrender.com', 'localhost', '127.0.0.1', '192.168.0.199']
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://ticketing-system-backend-d96m.onrender.com"
+]
+
 # Application definition
 INSTALLED_APPS = [
     'channels',
