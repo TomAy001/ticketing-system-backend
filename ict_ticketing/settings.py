@@ -10,7 +10,7 @@ SECRET_KEY = '-x!a(*ux81xc9kb4r3=3=$rpz$efcfr@=8+p6l^o6qw72620#w'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['ticketing-system-backend-d96m.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['ticketing-system-backend-d96m.onrender.com', 'localhost', '127.0.0.1', '192.168.0.199']
 
 # Application definition
 INSTALLED_APPS = [
@@ -102,11 +102,10 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [os.environ.get('REDIS_URL')],
+            "hosts": [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
         },
     },
 }
-
 
 # Email settings (configure for production)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
