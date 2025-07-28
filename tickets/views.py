@@ -9,58 +9,58 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import *
 from .forms import *
-from pathlib import Path
-import os
 import pandas as pd
+import requests
+from io import StringIO
 
 def home(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'home.html')
 
+def load_csv_from_google_drive():
+    url = 'https://drive.google.com/uc?export=download&id=1SJ3gZ4JocS0YFz4c2O8PIjI63h6pwijp'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        df = pd.read_csv(StringIO(response.text))
+        df.columns = df.columns.str.strip()
+        return df
+    except Exception as e:
+        print("Error loading Google Drive CSV:", e)
+        return None
+
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             id_number = form.cleaned_data.get('id_number').strip().upper()
+            df = load_csv_from_google_drive()
 
-            try:
-                # Load Excel file
-                BASE_DIR = Path(__file__).resolve().parent.parent
-                excel_path = os.path.join(BASE_DIR, 'SchoolDatabase.xlsx')
+            if df is not None:
+                match = df[df['ID Number'].astype(str).str.strip().str.upper() == id_number]
+                
+                if not match.empty:
+                    dept = match.iloc[0]['DEPARTMENT'].strip()
+                    role = 'staff' if dept.upper() == 'DICT' else 'student'
 
-                print("File exists?", os.path.exists(excel_path))
-
-                if not os.path.exists(excel_path):
-                    form.add_error(None, "Student record file not found on server.")
-                    return render(request, 'registration/register.html', {'form': form})
-
-                df = pd.read_excel(excel_path)
-                df.columns = df.columns.str.strip()
-
-                match = df[df['ID Number'].str.strip().str.upper() == id_number]
-
-                if match.empty:
-                    form.add_error('id_number', 'This ID is not recognized by the university records.')
+                    try:
+                        with transaction.atomic():
+                            user = form.save()
+                            UserProfile.objects.create(
+                                user=user,
+                                role=role,
+                                department=dept,
+                                phone_number=form.cleaned_data.get('phone_number', '')
+                            )
+                            messages.success(request, 'Account created successfully. You can now log in.')
+                            return redirect('login')
+                    except Exception as e:
+                        form.add_error(None, f'An unexpected error occurred: {str(e)}')
                 else:
-                    dept = match.iloc[0]['DEPARTMENT']
-                    role = 'staff' if dept.strip().upper() == 'DICT' else 'student'
-
-                    with transaction.atomic():
-                        user = form.save()
-
-                        UserProfile.objects.create(
-                            user=user,
-                            role=role,
-                            department=dept,
-                            phone_number=form.cleaned_data.get('phone_number', '')
-                        )
-
-                        messages.success(request, 'Account created successfully. You can now log in.')
-                        return redirect('login')
-
-            except Exception as e:
-                form.add_error(None, f'An unexpected error occurred: {str(e)}')
+                    form.add_error('id_number', 'This ID is not recognized in university records.')
+            else:
+                form.add_error(None, 'Failed to load university records. Please try again later.')
     else:
         form = UserRegistrationForm()
 
