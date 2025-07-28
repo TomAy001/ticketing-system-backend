@@ -13,6 +13,8 @@ urlpatterns = [
     path('ticket/<str:ticket_id>/delete/', views.delete_ticket, name='delete_ticket'),
     path('admin-panel/', views.admin_panel, name='admin_panel'),
     path('get-student-info/', views.get_student_info, name='get_student_info'),
+    path('test-csv/', views.test_csv_columns, name='test_csv'),
+
 ]
 
 handler400 = 'tickets.views.custom_bad_request'

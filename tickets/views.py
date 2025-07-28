@@ -19,7 +19,7 @@ def home(request):
     return render(request, 'home.html')
 
 def load_csv_from_google_drive():
-    url = 'https://drive.google.com/uc?export=download&id=1SJ3gZ4JocS0YFz4c2O8PIjI63h6pwijp'
+    url = 'https://drive.usercontent.google.com/u/0/uc?id=1SJ3gZ4JocS0YFz4c2O8PIjI63h6pwijp&export=download'
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -29,6 +29,12 @@ def load_csv_from_google_drive():
     except Exception as e:
         print("Error loading Google Drive CSV:", e)
         return None
+    
+def test_csv_columns(request):
+    df = load_csv_from_google_drive()
+    if df is not None:
+        return JsonResponse({'columns': df.columns.tolist()})
+    return JsonResponse({'error': 'Failed to load CSV'}, status=500)
 
 def register(request):
     if request.method == 'POST':
@@ -38,7 +44,7 @@ def register(request):
             df = load_csv_from_google_drive()
 
             if df is not None:
-                match = df[df['ID Number'].astype(str).str.strip().str.upper() == id_number]
+                match = df[df['ID NUMBER'].astype(str).str.strip().str.upper() == id_number]
                 
                 if not match.empty:
                     dept = match.iloc[0]['DEPARTMENT'].strip()
@@ -71,15 +77,15 @@ def get_student_info(request):
     df = load_csv_from_google_drive()
 
     if df is not None:
-        match = df[df['ID Number'].astype(str).str.strip().str.upper() == id_number]
+        match = df[df['ID NUMBER'].astype(str).str.strip().str.upper() == id_number]
 
         if not match.empty:
             dept = match.iloc[0]['DEPARTMENT'].strip()
             role = 'staff' if dept.upper() == 'DICT' else 'student'
 
             data = {
-                'first_name': match.iloc[0]['First Name'],
-                'last_name': match.iloc[0]['Surname'],
+                'first_name': match.iloc[0]['FIRST NAME'],
+                'last_name': match.iloc[0]['LAST NAME'],
                 'department': dept,
                 'role': role,
                 'found': True

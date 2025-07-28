@@ -438,10 +438,6 @@ body {
     font-weight: 600;
 }
 
-.tickets-list {
-    space-y: 1rem;
-}
-
 .ticket-item {
     padding: 1.5rem;
     border: 1px solid var(--border-color);

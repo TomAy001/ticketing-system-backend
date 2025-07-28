@@ -3,6 +3,9 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from .models import *
+import pandas as pd
+import requests
+from io import StringIO
 
 # Validator for ID number
 ID_validator = RegexValidator(
@@ -10,12 +13,23 @@ ID_validator = RegexValidator(
     message='ID number must follow a valid institutional format like RUN/ARC/23/12345 or RUN/REG/SS/PF/12345'
 )
 
+def load_csv_from_google_drive():
+    url = 'https://drive.google.com/uc?export=download&id=1SJ3gZ4JocS0YFz4c2O8PIjI63h6pwijp'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        df = pd.read_csv(StringIO(response.text))
+        df.columns = df.columns.str.strip()
+        return df
+    except Exception:
+        return None
+
 
 class UserRegistrationForm(UserCreationForm):
     id_number = forms.CharField(
         max_length=20,
         required=True,
-        label='ID Number',
+        label='ID NUMBER',
         validators=[ID_validator],
         help_text='Format: RUN/CMP/21/12345'
     )
@@ -42,35 +56,30 @@ class UserRegistrationForm(UserCreationForm):
         )
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
-        if self.is_bound:
-            id_num = self.data.get('id_number', '').strip().upper()
-            record = StudentRecord.objects.filter(id_number=id_num).first()
-            if record:
-                self.fields['first_name'].initial = record.first_name
-                self.fields['last_name'].initial = record.surname
-                self.fields['department'].initial = record.department.upper()
-
-                # Assign role based on department
-                assigned_role = 'staff' if record.department.strip().upper() == 'DICT' else 'student'
-                self.fields['role'].initial = assigned_role
-                self.fields['role'].widget.attrs['readonly'] = True  # Make it readonly in HTML
-                self.fields['role'].widget.attrs['style'] = 'background-color: #f9f9f9;'  # Optional grey background
-
-                self.fields['first_name'].widget.attrs['readonly'] = True
-                self.fields['last_name'].widget.attrs['readonly'] = True
-                self.fields['department'].widget.attrs['readonly'] = True
-
-                # Save role on form instance for later use in save()
-                self.assigned_role = assigned_role
-
-
-
+            if self.is_bound:
+                id_num = self.data.get('id_number', '').strip().upper()
+                df = load_csv_from_google_drive()
+                if df is not None:
+                    match = df[df['ID NUMBER'].astype(str).str.strip().str.upper() == id_num]
+                    if not match.empty:
+                        record = match.iloc[0]
+                        self.fields['first_name'].initial = record['FIRST NAME']
+                        self.fields['last_name'].initial = record['LAST NAME']
+                        self.fields['department'].initial = record['DEPARTMENT'].upper()
+                        assigned_role = 'staff' if record['DEPARTMENT'].strip().upper() == 'DICT' else 'student'
+                        self.fields['role'].initial = assigned_role
+                        self.fields['role'].widget.attrs['readonly'] = True
+                        self.fields['first_name'].widget.attrs['readonly'] = True
+                        self.fields['last_name'].widget.attrs['readonly'] = True
+                        self.fields['department'].widget.attrs['readonly'] = True
+                        self.assigned_role = assigned_role
 
     def clean_id_number(self):
         id_num = self.cleaned_data['id_number'].strip().upper()
-        if not StudentRecord.objects.filter(id_number=id_num).exists():
+        df = load_csv_from_google_drive()
+        if df is None or df[df['ID NUMBER'].astype(str).str.strip().str.upper() == id_num].empty:
             raise forms.ValidationError("ID not found in university records.")
         return id_num
 

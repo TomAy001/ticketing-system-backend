@@ -11,6 +11,15 @@
         
         <form method="post" class="auth-form">
             {% csrf_token %}
+            {{ form.role.as_hidden }}
+            
+            {% if form.role.value %}
+                <div class="form-group">
+                    <small class="text-muted">
+                        📌 You are being registered as a <strong>{{ form.role.value|title }}</strong>
+                    </small>
+                </div>
+            {% endif %}
             
             <div class="form-group">
                 <label for="{{ form.id_number.id_for_label }}">ID Number</label>
@@ -55,15 +64,6 @@
             </div>
             
             <div class="form-row">
-                {% comment %} <div class="form-group">
-                    <label for="id_role_display">Role</label>
-                    <input type="text" id="id_role_display" class="form-control" readonly>
-                    <input type="hidden" id="id_role" name="role" value="">
-                    {% if form.role.errors %}
-                    <div class="form-errors">{{ form.role.errors }}</div>
-                    {% endif %}
-                </div> {% endcomment %}
-
                 <div class="form-group">
                     <label for="{{ form.department.id_for_label }}">Department</label>
                     {{ form.department }}
