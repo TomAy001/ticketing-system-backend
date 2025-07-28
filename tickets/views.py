@@ -68,17 +68,25 @@ def register(request):
 
 def get_student_info(request):
     id_number = request.GET.get('id_number', '').strip().upper()
-    try:
-        record = StudentRecord.objects.get(id_number=id_number)       
-        role = 'staff' if record.department.strip().upper() == 'DICT' else 'student'      
-        data = {
-            'first_name': record.first_name,
-            'last_name': record.surname,
-            'department': record.department,
-            'role': role, 
-            'found': True
-        }
-    except StudentRecord.DoesNotExist:
+    df = load_csv_from_google_drive()
+
+    if df is not None:
+        match = df[df['ID Number'].astype(str).str.strip().str.upper() == id_number]
+
+        if not match.empty:
+            dept = match.iloc[0]['DEPARTMENT'].strip()
+            role = 'staff' if dept.upper() == 'DICT' else 'student'
+
+            data = {
+                'first_name': match.iloc[0]['First Name'],
+                'last_name': match.iloc[0]['Surname'],
+                'department': dept,
+                'role': role,
+                'found': True
+            }
+        else:
+            data = {'found': False}
+    else:
         data = {'found': False}
 
     return JsonResponse(data)
