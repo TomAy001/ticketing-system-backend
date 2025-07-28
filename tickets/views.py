@@ -9,6 +9,9 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import *
 from .forms import *
+from pathlib import Path
+import os
+import pandas as pd
 
 def home(request):
     if request.user.is_authenticated:
@@ -20,24 +23,41 @@ def register(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             id_number = form.cleaned_data.get('id_number').strip().upper()
+
             try:
-                record = StudentRecord.objects.get(id_number=id_number)
+                # Load Excel file
+                BASE_DIR = Path(__file__).resolve().parent.parent
+                excel_path = os.path.join(BASE_DIR, 'SchoolDatabase.xlsx')
 
-                with transaction.atomic():
-                    user = form.save()
+                print("File exists?", os.path.exists(excel_path))
 
-                    role = 'staff' if record.department.strip().upper() == 'DICT' else 'student'
+                if not os.path.exists(excel_path):
+                    form.add_error(None, "Student record file not found on server.")
+                    return render(request, 'registration/register.html', {'form': form})
 
-                    UserProfile.objects.create(
-                        user=user,
-                        role=role
-                    )
+                df = pd.read_excel(excel_path)
+                df.columns = df.columns.str.strip()
 
-                    messages.success(request, 'Account created successfully. You can now log in.')
-                    return redirect('login')
+                match = df[df['ID Number'].str.strip().str.upper() == id_number]
 
-            except StudentRecord.DoesNotExist:
-                form.add_error('id_number', 'This ID is not recognized by the university records.')
+                if match.empty:
+                    form.add_error('id_number', 'This ID is not recognized by the university records.')
+                else:
+                    dept = match.iloc[0]['DEPARTMENT']
+                    role = 'staff' if dept.strip().upper() == 'DICT' else 'student'
+
+                    with transaction.atomic():
+                        user = form.save()
+
+                        UserProfile.objects.create(
+                            user=user,
+                            role=role,
+                            department=dept,
+                            phone_number=form.cleaned_data.get('phone_number', '')
+                        )
+
+                        messages.success(request, 'Account created successfully. You can now log in.')
+                        return redirect('login')
 
             except Exception as e:
                 form.add_error(None, f'An unexpected error occurred: {str(e)}')

@@ -96,12 +96,6 @@ class UserRegistrationForm(UserCreationForm):
 
         if commit:
             user.save()
-            UserProfile.objects.create(
-                user=user,
-                role=getattr(self, 'assigned_role', 'student'),
-                department=self.cleaned_data['department'],
-                phone_number=self.cleaned_data['phone_number']
-            )
         return user
 
 
