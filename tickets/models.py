@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 import uuid
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 class UserProfile(models.Model):
     ROLE_CHOICES = [
@@ -78,3 +80,12 @@ class TicketComment(models.Model):
     class Meta:
         ordering = ['created_at']
 
+@receiver(post_save, sender=User)
+def create_superuser_profile(sender, instance, created, **kwargs):
+    if created and instance.is_superuser:
+        # Only create profile for superusers
+        UserProfile.objects.create(
+            user=instance,
+            role='admin',
+            department='DICT'
+        )
