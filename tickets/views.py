@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.core.paginator import Paginator
 from channels.layers import get_channel_layer
@@ -17,6 +17,13 @@ def home(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'home.html')
+
+def create_admin_user(request):
+    if User.objects.filter(username='admin').exists():
+        return HttpResponse("Superuser already exists.")
+    
+    User.objects.create_superuser('admin', 'admin@run.edu.ng', 'adminpassword123')
+    return HttpResponse("Superuser created.")
 
 def load_csv_from_google_drive():
     url = 'https://drive.usercontent.google.com/u/0/uc?id=1SJ3gZ4JocS0YFz4c2O8PIjI63h6pwijp&export=download'
