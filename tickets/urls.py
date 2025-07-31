@@ -14,7 +14,6 @@ urlpatterns = [
     path('admin-panel/', views.admin_panel, name='admin_panel'),
     path('get-student-info/', views.get_student_info, name='get_student_info'),
     path('test-csv/', views.test_csv_columns, name='test_csv'),
-    path('create-admin/', views.create_admin_user),
 ]
 
 handler400 = 'tickets.views.custom_bad_request'

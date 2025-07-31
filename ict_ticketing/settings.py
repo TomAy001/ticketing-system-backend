@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '-x!a(*ux81xc9kb4r3=3=$rpz$efcfr@=8+p6l^o6qw72620#w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['ticketing-system-backend-d96m.onrender.com', 'localhost', '127.0.0.1', '192.168.0.199']
 
