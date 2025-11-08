@@ -123,7 +123,7 @@ git clone https://github.com/YourUsername/ticketing-system-backend.git
 cd ticketing-system-backend
 
 # 2. Create a new Conda environment
-conda create -n ticketingenv python=3.11
+conda create -n ticketingenv python=3.13.2
 
 # 3. Activate the environment
 conda activate ticketingenv
