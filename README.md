@@ -69,12 +69,12 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A[User creates ticket] --> B[Ticket saved (pending)]
+    A[User creates ticket] --> B[Ticket saved - pending]
     B --> C{Admin assigns staff?}
-    C -- Yes --> D[status = assigned]
-    D --> E[Staff starts work -> in_progress]
-    E --> F[Staff resolves -> resolved]
-    F --> G[Admin/Staff closes -> closed]
+    C -- Yes --> D[Status = assigned]
+    D --> E[Staff starts work → In Progress]
+    E --> F[Staff resolves → Resolved]
+    F --> G[Admin/Staff closes → Closed]
     C -- No --> B
 ```
 
