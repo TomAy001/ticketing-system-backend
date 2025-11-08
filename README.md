@@ -122,20 +122,22 @@ sequenceDiagram
 git clone https://github.com/YourUsername/ticketing-system-backend.git
 cd ticketing-system-backend
 
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# 2. Create a new Conda environment
+conda create -n ticketingenv python=3.11
 
-# 3. Install dependencies
+# 3. Activate the environment
+conda activate ticketingenv
+
+# 4. Install dependencies
 pip install -r requirements.txt
 
-# 4. Apply migrations
+# 5. Apply migrations
 python manage.py migrate
 
-# 5. Create superuser
+# 6. Create superuser
 python manage.py createsuperuser
 
-# 6. Run server
+# 7. Run server
 python manage.py runserver
 ```
 
@@ -153,7 +155,7 @@ python manage.py runserver
 | ------------------- | -------------------------- |
 | `DJANGO_SECRET_KEY` | Your Django secret key     |
 | `REDIS_URL`         | Your Redis connection URL  |
-| `PYTHON_VERSION`    | Python version (e.g. 3.11) |
+| `PYTHON_VERSION`    | Python version (e.g. 3.13.2) |
 
 ---
 
@@ -162,6 +164,7 @@ python manage.py runserver
 | Name                      | Role                             |
 | ------------------------- | -------------------------------- |
 | **Tomide Stephen Ayoola** | Backend Developer / Project Lead |
+| **Mcewen, Joanne Atinuke**| Frontend Developer / Project Lead|
 | **DICT Directorate**      | Institutional Partners           |
 
 ---
